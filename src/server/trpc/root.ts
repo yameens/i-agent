@@ -5,7 +5,7 @@ import { insightRouter } from "./routers/insight";
 
 export const appRouter = createTRPCRouter({
   campaign: campaignRouter,
-  call: callRouter,
+  calls: callRouter,
   insight: insightRouter,
 });
 

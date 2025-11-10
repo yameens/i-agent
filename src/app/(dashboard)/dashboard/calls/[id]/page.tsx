@@ -13,7 +13,7 @@ export default function CallDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { data: call, isLoading } = trpc.call.getById.useQuery({ id });
+  const { data: call, isLoading } = trpc.calls.getById.useQuery({ id });
 
   if (isLoading) {
     return (

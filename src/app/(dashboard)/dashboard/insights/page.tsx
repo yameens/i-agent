@@ -39,7 +39,7 @@ export default function InsightsPage() {
 
   // Get transcript for selected signal
   const { data: callDetails, isLoading: isLoadingTranscript } =
-    trpc.call.getById.useQuery(
+    trpc.calls.getById.useQuery(
       { id: selectedSignal?.callId || "" },
       { enabled: !!selectedSignal?.callId }
     );

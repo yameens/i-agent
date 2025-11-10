@@ -45,7 +45,7 @@ export async function getExportableClaims(
     },
   });
 
-  return claims.map((claim) => ({
+  return claims.map((claim: any) => ({
     claimText: claim.text,
     hypothesisQuestion: claim.hypothesis?.question || "N/A",
     hypothesisStatus: claim.hypothesis?.status || "N/A",
@@ -54,7 +54,7 @@ export async function getExportableClaims(
     phoneNumber: claim.call.phoneNumber,
     callCompletedAt: claim.call.completedAt?.toISOString() || "N/A",
     evidenceUrl: claim.evidenceUrl,
-    timestamp: claim.timestamp,
+    timestamp: claim.startSec,
   }));
 }
 

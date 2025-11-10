@@ -173,7 +173,7 @@ export class ClaimParser {
   /**
    * Format Zod errors into readable string
    */
-  private static formatZodError(error: z.ZodError): string {
+  private static formatZodError(error: any): string {
     if (!error.errors || error.errors.length === 0) {
       return "Unknown validation error";
     }

@@ -13,10 +13,11 @@ export const callRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       // Verify campaign belongs to user's org
+      const organizationId = ctx.memberships[0]?.organizationId;
       const campaign = await ctx.db.campaign.findFirst({
         where: {
           id: input.campaignId,
-          organizationId: ctx.organizationId,
+          organizationId,
         },
       });
 
@@ -95,7 +96,8 @@ export const callRouter = createTRPCRouter({
       }
 
       // Verify call belongs to user's org
-      if (call.campaign.organizationId !== ctx.organizationId) {
+      const organizationId = ctx.memberships[0]?.organizationId;
+      if (call.campaign.organizationId !== organizationId) {
         throw new Error("Unauthorized");
       }
 

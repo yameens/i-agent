@@ -12,10 +12,11 @@ export const insightRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       // Verify campaign belongs to user's org
+      const organizationId = ctx.memberships[0]?.organizationId;
       const campaign = await ctx.db.campaign.findFirst({
         where: {
           id: input.campaignId,
-          organizationId: ctx.organizationId,
+          organizationId,
         },
       });
 
@@ -57,10 +58,11 @@ export const insightRouter = createTRPCRouter({
     .input(z.object({ campaignId: z.string() }))
     .query(async ({ ctx, input }) => {
       // Verify campaign belongs to user's org
+      const organizationId = ctx.memberships[0]?.organizationId;
       const campaign = await ctx.db.campaign.findFirst({
         where: {
           id: input.campaignId,
-          organizationId: ctx.organizationId,
+          organizationId,
         },
       });
 
@@ -134,7 +136,8 @@ export const insightRouter = createTRPCRouter({
       }
 
       // Verify hypothesis belongs to user's org
-      if (hypothesis.campaign.organizationId !== ctx.organizationId) {
+      const organizationId = ctx.memberships[0]?.organizationId;
+      if (hypothesis.campaign.organizationId !== organizationId) {
         throw new Error("Unauthorized");
       }
 

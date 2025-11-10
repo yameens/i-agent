@@ -1,0 +1,206 @@
+// Diligence Dialer - Multi-tenant Schema
+// Supabase Postgres with RLS policies
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================================================
+// CORE MODELS
+// ============================================================================
+
+model Organization {
+  id           String        @id @default(cuid())
+  name         String
+  slug         String        @unique
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  users        User[]
+  campaigns    Campaign[]
+  integrations Integration[]
+
+  @@map("organizations")
+}
+
+model User {
+  id             String       @id // Supabase Auth UUID
+  email          String       @unique
+  role           Role         @default(MEMBER)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@map("users")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+// ============================================================================
+// CAMPAIGN & CALL MODELS
+// ============================================================================
+
+model Campaign {
+  id             String         @id @default(cuid())
+  organizationId String
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  category       String // e.g., "Retail", "Healthcare"
+  checklistId    String // FK to RAG checklist (pgvector)
+  promptTemplate String         @db.Text
+  status         CampaignStatus @default(DRAFT)
+  calls          Call[]
+  hypotheses     Hypothesis[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([organizationId])
+  @@index([status])
+  @@map("campaigns")
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+model Call {
+  id               String     @id @default(cuid())
+  campaignId       String
+  campaign         Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  phoneNumber      String
+  twilioSid        String?    @unique
+  status           CallStatus @default(QUEUED)
+  recordingUrl     String?
+  recordingDualUrl String? // Dual-channel recording
+  duration         Int? // seconds
+  consentGiven     Boolean    @default(false)
+  transcript       String?    @db.Text
+  utterances       Utterance[]
+  claims           Claim[]
+  startedAt        DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  @@index([campaignId])
+  @@index([status])
+  @@index([twilioSid])
+  @@map("calls")
+}
+
+enum CallStatus {
+  QUEUED
+  RINGING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  NO_ANSWER
+}
+
+model Utterance {
+  id         String   @id @default(cuid())
+  callId     String
+  call       Call     @relation(fields: [callId], references: [id], onDelete: Cascade)
+  speaker    Speaker // AI or HUMAN
+  text       String   @db.Text
+  timestamp  Float // seconds from call start
+  confidence Float? // ASR confidence
+  createdAt  DateTime @default(now())
+
+  @@index([callId])
+  @@map("utterances")
+}
+
+enum Speaker {
+  AI
+  HUMAN
+}
+
+// ============================================================================
+// CLAIM & HYPOTHESIS MODELS
+// ============================================================================
+
+model Claim {
+  id           String      @id @default(cuid())
+  callId       String
+  call         Call        @relation(fields: [callId], references: [id], onDelete: Cascade)
+  hypothesisId String?
+  hypothesis   Hypothesis? @relation(fields: [hypothesisId], references: [id], onDelete: SetNull)
+  text         String      @db.Text
+  evidenceUrl  String // recording URL + timestamp fragment
+  timestamp    Float // seconds from call start
+  confidence   Float // 0-1 score from extraction
+  validated    Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([callId])
+  @@index([hypothesisId])
+  @@index([validated])
+  @@map("claims")
+}
+
+model Hypothesis {
+  id         String           @id @default(cuid())
+  campaignId String
+  campaign   Campaign         @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  question   String           @db.Text
+  claims     Claim[]
+  status     HypothesisStatus @default(PENDING)
+  conclusion String?          @db.Text
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@index([campaignId])
+  @@index([status])
+  @@map("hypotheses")
+}
+
+enum HypothesisStatus {
+  PENDING
+  VALIDATED
+  INVALIDATED
+  INCONCLUSIVE
+}
+
+// ============================================================================
+// INTEGRATION MODELS
+// ============================================================================
+
+model Integration {
+  id             String              @id @default(cuid())
+  organizationId String
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  provider       IntegrationProvider
+  accessToken    String              @db.Text // Encrypted
+  refreshToken   String?             @db.Text
+  expiresAt      DateTime?
+  config         Json? // Provider-specific settings
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@unique([organizationId, provider])
+  @@index([organizationId])
+  @@map("integrations")
+}
+
+enum IntegrationProvider {
+  SALESFORCE
+  HUBSPOT
+  GOOGLE_SHEETS
+  SNOWFLAKE
+}

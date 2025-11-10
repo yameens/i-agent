@@ -26,20 +26,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Verify user has access to this campaign
-    const dbUser = await db.user.findUnique({
-      where: { id: user.id },
+    // Verify user has access to this campaign through membership
+    const membership = await db.membership.findFirst({
+      where: { userId: user.id },
       select: { organizationId: true },
     });
 
-    if (!dbUser) {
+    if (!membership) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     const campaign = await db.campaign.findFirst({
       where: {
         id: campaignId,
-        organizationId: dbUser.organizationId,
+        organizationId: membership.organizationId,
       },
     });
 

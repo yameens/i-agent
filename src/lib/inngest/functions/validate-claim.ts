@@ -87,17 +87,6 @@ export const validateClaim = inngest.createFunction(
     // Step 2: Analyze claim consistency using GPT-4 with retries
     const analysis = await step.run(
       "analyze-consistency",
-      {
-        timeout: "2m",
-        retries: {
-          attempts: 3,
-          backoff: {
-            type: "exponential",
-            base: 2000,
-            max: 15000,
-          },
-        },
-      },
       async () => {
         const systemPrompt = `You are an expert analyst evaluating the consistency and validity of claims from multiple independent sources.
 
@@ -188,9 +177,6 @@ IMPORTANT: Be rigorous. Only mark as VALIDATED if there is strong corroborating 
     // Step 3: Update hypothesis and claims (atomic transaction)
     await step.run(
       "update-hypothesis-and-claims",
-      {
-        timeout: "30s",
-      },
       async () => {
         await db.$transaction(async (tx) => {
           // Update hypothesis with validation results

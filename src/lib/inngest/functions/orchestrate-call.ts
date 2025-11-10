@@ -79,17 +79,6 @@ export const orchestrateCall = inngest.createFunction(
     // Step 3: Initiate Twilio call with retries
     const twilioCall = await step.run(
       "initiate-twilio-call",
-      {
-        timeout: "30s",
-        retries: {
-          attempts: 3,
-          backoff: {
-            type: "exponential",
-            base: 2000, // Start with 2s
-            max: 10000, // Max 10s
-          },
-        },
-      },
       async () => {
         try {
           const call = await twilioClient.calls.create({

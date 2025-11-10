@@ -48,17 +48,6 @@ export const transcribeRecording = inngest.createFunction(
     // Step 1: Download recording with retries
     const audioBuffer = await step.run(
       "download-recording",
-      {
-        timeout: "2m",
-        retries: {
-          attempts: 3,
-          backoff: {
-            type: "exponential",
-            base: 1000,
-            max: 5000,
-          },
-        },
-      },
       async () => {
         const urlToDownload = recordingDualUrl || recordingUrl;
         const response = await fetch(urlToDownload);
@@ -90,21 +79,10 @@ export const transcribeRecording = inngest.createFunction(
     // Step 2: Transcribe with Whisper
     const transcription = await step.run(
       "transcribe-with-whisper",
-      {
-        timeout: "5m",
-        retries: {
-          attempts: 3,
-          backoff: {
-            type: "exponential",
-            base: 2000,
-            max: 15000,
-          },
-        },
-      },
       async () => {
         try {
           // Convert ArrayBuffer to File
-          const audioFile = new File([audioBuffer], "recording.mp3", {
+          const audioFile = new File([audioBuffer as any], "recording.mp3", {
             type: "audio/mpeg",
           });
 
@@ -198,9 +176,6 @@ export const transcribeRecording = inngest.createFunction(
     // Step 4: Save transcript and utterances to database (atomic transaction)
     await step.run(
       "save-to-database",
-      {
-        timeout: "30s",
-      },
       async () => {
         const fullTranscript = transcription.text;
 

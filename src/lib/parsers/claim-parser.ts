@@ -165,9 +165,9 @@ export class ClaimParser {
     // Both attempts failed, return the original error with more context
     return {
       success: false,
-      error: `Failed to parse even after repair. Original error: ${firstAttempt.error}. Repair error: ${secondAttempt.error}`,
+      error: `Failed to parse even after repair. Original error: ${"error" in firstAttempt ? firstAttempt.error : "Unknown"}. Repair error: ${"error" in secondAttempt ? secondAttempt.error : "Unknown"}`,
       rawData: rawOutput,
-    };
+    } as any;
   }
 
   /**

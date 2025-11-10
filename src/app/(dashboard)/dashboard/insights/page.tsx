@@ -301,7 +301,7 @@ export default function InsightsPage() {
         open={isDrawerOpen}
         onOpenChange={setIsDrawerOpen}
         signal={selectedSignal}
-        transcript={callDetails?.utterances}
+        transcript={callDetails?.utterances as any}
         isLoadingTranscript={isLoadingTranscript}
       />
     </div>

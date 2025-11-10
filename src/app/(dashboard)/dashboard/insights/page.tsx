@@ -33,9 +33,9 @@ export default function InsightsPage() {
 
   const { data: hypotheses, isLoading: isLoadingHypotheses } =
     trpc.insight.listHypotheses.useQuery(
-      { campaignId: selectedCampaignId! },
-      { enabled: !!selectedCampaignId }
-    );
+    { campaignId: selectedCampaignId! },
+    { enabled: !!selectedCampaignId }
+  );
 
   // Get transcript for selected signal
   const { data: callDetails, isLoading: isLoadingTranscript } =
@@ -51,12 +51,12 @@ export default function InsightsPage() {
     return validatedClaims.map((claim) => ({
       id: claim.id,
       claim: claim.text,
-      sku: undefined, // Would be extracted from claim metadata
-      geo: undefined, // Would be extracted from claim metadata
-      field: undefined, // Would be extracted from claim metadata
+      sku: claim.skuId || undefined,
+      geo: claim.geoCode || undefined,
+      field: claim.field || undefined,
       confidence: claim.confidence,
       validated: claim.validated,
-      timestamp: claim.timestamp,
+      timestamp: claim.startSec,
       callId: claim.call.id,
       phoneNumber: claim.call.phoneNumber,
       evidenceUrl: claim.evidenceUrl,
@@ -140,31 +140,31 @@ export default function InsightsPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Select Campaign</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+      <Card>
+        <CardHeader>
+          <CardTitle>Select Campaign</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
               {campaigns.map((campaign) => (
-                <Button
-                  key={campaign.id}
-                  variant={
-                    selectedCampaignId === campaign.id ? "default" : "outline"
-                  }
-                  className={
-                    selectedCampaignId === campaign.id
-                      ? "bg-brand hover:bg-brand/90"
-                      : ""
-                  }
-                  onClick={() => setSelectedCampaignId(campaign.id)}
-                >
-                  {campaign.name}
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              <Button
+                key={campaign.id}
+                variant={
+                  selectedCampaignId === campaign.id ? "default" : "outline"
+                }
+                className={
+                  selectedCampaignId === campaign.id
+                    ? "bg-brand hover:bg-brand/90"
+                    : ""
+                }
+                onClick={() => setSelectedCampaignId(campaign.id)}
+              >
+                {campaign.name}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
       )}
 
       {selectedCampaignId && (
@@ -290,8 +290,8 @@ export default function InsightsPage() {
                     </a>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+            </CardContent>
+          </Card>
           )}
         </>
       )}

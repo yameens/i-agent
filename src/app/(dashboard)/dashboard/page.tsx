@@ -128,11 +128,11 @@ export default function DashboardPage() {
                 Get started by creating a campaign. You&apos;ll be able to configure
                 call scripts, set up hypotheses, and start gathering insights.
               </p>
-              <Button asChild className="bg-brand hover:bg-brand/90">
+            <Button asChild className="bg-brand hover:bg-brand/90">
                 <Link href="/dashboard/campaigns/new">
                   Create Your First Campaign
                 </Link>
-              </Button>
+            </Button>
             </div>
           </CardContent>
         </Card>

@@ -33,7 +33,7 @@ export default function CallsPage() {
             campaign page.
           </p>
           <div className="mt-4 space-y-2">
-            {campaigns?.map((campaign: { id: string; name: string; _count: { calls: number } }) => (
+            {campaigns?.map((campaign: any) => (
               <Link
                 key={campaign.id}
                 href={`/dashboard/campaigns/${campaign.id}`}

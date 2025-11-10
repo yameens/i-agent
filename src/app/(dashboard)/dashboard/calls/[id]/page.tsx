@@ -120,7 +120,7 @@ export default function CallDetailPage({
             <div className="flex justify-between">
               <span className="text-muted-foreground">Validated Claims:</span>
               <span className="font-medium">
-                {call.claims.filter((c: { validated: boolean }) => c.validated).length}
+                {call.claims.filter((c: any) => c.validated).length}
               </span>
             </div>
           </CardContent>
@@ -149,13 +149,7 @@ export default function CallDetailPage({
           <CardContent>
             <div className="space-y-4">
               {call.utterances.length > 0 ? (
-                call.utterances.map((utterance: {
-                  id: string;
-                  speaker: string;
-                  text: string;
-                  timestamp: number;
-                  confidence?: number;
-                }) => (
+                call.utterances.map((utterance: any) => (
                   <div
                     key={utterance.id}
                     className={`p-3 rounded-lg ${
@@ -201,14 +195,7 @@ export default function CallDetailPage({
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {call.claims.map((claim: {
-                id: string;
-                text: string;
-                validated: boolean;
-                confidence: number;
-                evidenceUrl: string;
-                hypothesis?: { id: string; question: string } | null;
-              }) => (
+              {call.claims.map((claim: any) => (
                 <div
                   key={claim.id}
                   className="p-4 border rounded-lg hover:shadow-sm transition-shadow"

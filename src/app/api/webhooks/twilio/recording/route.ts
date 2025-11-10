@@ -1,16 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import { inngest } from "@/lib/inngest/client";
+import { verifyAndDeduplicateWebhook } from "@/lib/webhook-security";
 
 export async function POST(request: NextRequest) {
   try {
     const callId = request.nextUrl.searchParams.get("callId");
-    const formData = await request.formData();
+
+    if (!callId) {
+      return NextResponse.json({ error: "Missing callId" }, { status: 400 });
+    }
+
+    // Verify signature and check for duplicates
+    const verification = await verifyAndDeduplicateWebhook(
+      request,
+      "recording"
+    );
+
+    if (!verification.isValid) {
+      console.error("Invalid Twilio signature for recording webhook");
+      return NextResponse.json(
+        { error: "Invalid signature" },
+        { status: 403 }
+      );
+    }
+
+    if (verification.isDuplicate) {
+      console.log("Duplicate recording webhook event, ignoring");
+      return NextResponse.json({ success: true, duplicate: true });
+    }
+
+    const formData = verification.formData!;
     const recordingUrl = formData.get("RecordingUrl")?.toString();
     const recordingSid = formData.get("RecordingSid")?.toString();
 
-    if (!callId || !recordingUrl) {
+    if (!recordingUrl) {
       return NextResponse.json(
-        { error: "Missing callId or recordingUrl" },
+        { error: "Missing recordingUrl" },
         { status: 400 }
       );
     }

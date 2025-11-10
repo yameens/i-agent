@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create organization and user in a transaction
+    // Create organization, user, and membership in a transaction
     const result = await db.$transaction(async (tx) => {
       const organization = await tx.organization.create({
         data: {
@@ -44,16 +44,26 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      const dbUser = await tx.user.create({
-        data: {
+      // Create or update user
+      const dbUser = await tx.user.upsert({
+        where: { id: user.id },
+        update: {},
+        create: {
           id: user.id,
           email: userEmail || user.email!,
-          role: "OWNER",
-          organizationId: organization.id,
         },
       });
 
-      return { organization, user: dbUser };
+      // Create membership
+      const membership = await tx.membership.create({
+        data: {
+          userId: user.id,
+          organizationId: organization.id,
+          role: "OWNER",
+        },
+      });
+
+      return { organization, user: dbUser, membership };
     });
 
     return NextResponse.json(result, { status: 201 });

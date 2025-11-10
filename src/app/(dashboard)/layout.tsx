@@ -17,24 +17,27 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  // Fetch user's organization
-  const dbUser = await db.user.findUnique({
-    where: { id: user.id },
+  // Fetch user's memberships
+  const memberships = await db.membership.findMany({
+    where: { userId: user.id },
     include: {
       organization: true,
     },
   });
 
-  if (!dbUser) {
-    // User exists in Supabase but not in our DB - redirect to setup
+  if (memberships.length === 0) {
+    // User exists in Supabase but has no org memberships - redirect to setup
     redirect("/auth/setup-org");
   }
+
+  // Use first membership's org for display (in future, add org switcher)
+  const primaryMembership = memberships[0];
 
   return (
     <div className="min-h-screen bg-background">
       <Nav
         user={{ email: user.email! }}
-        organizationName={dbUser.organization.name}
+        organizationName={primaryMembership.organization.name}
       />
       <main className="container mx-auto py-6 px-6">{children}</main>
     </div>

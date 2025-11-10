@@ -21,7 +21,7 @@ model Organization {
   slug         String        @unique
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  users        User[]
+  memberships  Membership[]
   campaigns    Campaign[]
   integrations Integration[]
 
@@ -29,16 +29,29 @@ model Organization {
 }
 
 model User {
-  id             String       @id // Supabase Auth UUID
-  email          String       @unique
-  role           Role         @default(MEMBER)
+  id          String       @id // Supabase Auth UUID
+  email       String       @unique
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  memberships Membership[]
+
+  @@map("users")
+}
+
+model Membership {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           Role         @default(MEMBER)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
+  @@unique([userId, organizationId])
+  @@index([userId])
   @@index([organizationId])
-  @@map("users")
+  @@map("memberships")
 }
 
 enum Role {
@@ -140,18 +153,79 @@ model Claim {
   call         Call        @relation(fields: [callId], references: [id], onDelete: Cascade)
   hypothesisId String?
   hypothesis   Hypothesis? @relation(fields: [hypothesisId], references: [id], onDelete: SetNull)
-  text         String      @db.Text
+  
+  // Structured claim fields
+  field        ClaimField // Type of claim (PRICE, VELOCITY, etc.)
+  valueNumber  Float? // Numeric value (e.g., 5.99, 15, 100)
+  valueText    String?     @db.Text // Text value for qualitative claims
+  unit         ClaimUnit? // Normalized unit (USD, PERCENT, UNITS, etc.)
+  skuId        String? // Product/SKU identifier
+  geoCode      String? // ISO country code or region identifier
+  
+  // Legacy field for backward compatibility
+  text         String      @db.Text // Human-readable summary
+  
+  // Temporal and evidence
   evidenceUrl  String // recording URL + timestamp fragment
-  timestamp    Float // seconds from call start
+  startSec     Float // seconds from call start
+  endSec       Float? // end timestamp if claim spans time
+  
+  // Metadata
   confidence   Float // 0-1 score from extraction
   validated    Boolean     @default(false)
+  rawText      String?     @db.Text // Original quote from transcript
+  context      String?     @db.Text // Surrounding context
+  
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
   @@index([callId])
   @@index([hypothesisId])
   @@index([validated])
+  @@index([field])
   @@map("claims")
+}
+
+enum ClaimField {
+  PRICE
+  VELOCITY
+  STOCKOUT
+  INVENTORY_LEVEL
+  MARKET_SHARE
+  PROMOTION
+  COMPETITIVE_ACTIVITY
+  CUSTOMER_FEEDBACK
+  OTHER
+}
+
+enum ClaimUnit {
+  // Monetary
+  USD
+  EUR
+  GBP
+  JPY
+  
+  // Percentage
+  PERCENT
+  
+  // Quantity
+  UNITS
+  CASES
+  PALLETS
+  BOXES
+  
+  // Time
+  DAYS
+  WEEKS
+  MONTHS
+  
+  // Rate
+  UNITS_PER_DAY
+  UNITS_PER_WEEK
+  UNITS_PER_MONTH
+  
+  // Other
+  NONE
 }
 
 model Hypothesis {
@@ -203,4 +277,15 @@ enum IntegrationProvider {
   HUBSPOT
   GOOGLE_SHEETS
   SNOWFLAKE
+}
+
+// ============================================================================
+// WEBHOOK DEDUPLICATION
+// ============================================================================
+
+model WebhookDedup {
+  id         String   @id // Composite: CallSid + event type
+  receivedAt DateTime @default(now())
+
+  @@map("webhook_dedup")
 }

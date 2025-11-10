@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/db";
 import twilio from "twilio";
+import { verifyAndDeduplicateWebhook } from "@/lib/webhook-security";
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,6 +9,23 @@ export async function POST(request: NextRequest) {
 
     if (!callId) {
       return NextResponse.json({ error: "Missing callId" }, { status: 400 });
+    }
+
+    // Verify signature and check for duplicates
+    const verification = await verifyAndDeduplicateWebhook(request, "voice");
+
+    if (!verification.isValid) {
+      console.error("Invalid Twilio signature for voice webhook");
+      return NextResponse.json(
+        { error: "Invalid signature" },
+        { status: 403 }
+      );
+    }
+
+    if (verification.isDuplicate) {
+      console.log("Duplicate voice webhook event, ignoring");
+      // Return success to acknowledge receipt but don't process
+      return NextResponse.json({ success: true, duplicate: true });
     }
 
     // Fetch call and campaign

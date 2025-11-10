@@ -1,36 +1,52 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, adminProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, adminProcedure, hasOrgAccess, hasOrgAdminAccess } from "../trpc";
+import { TRPCError } from "@trpc/server";
 
 export const campaignRouter = createTRPCRouter({
-  // List all campaigns for the user's organization
-  list: protectedProcedure.query(async ({ ctx }) => {
-    return ctx.db.campaign.findMany({
-      where: {
-        organizationId: ctx.organizationId,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      include: {
-        _count: {
-          select: {
-            calls: true,
-            hypotheses: true,
+  // List all campaigns for user's organizations
+  list: protectedProcedure
+    .input(z.object({ organizationId: z.string().optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      const orgIds = ctx.memberships.map((m) => m.organizationId);
+      
+      // If specific org requested, verify access
+      if (input?.organizationId) {
+        if (!hasOrgAccess(ctx.memberships, input.organizationId)) {
+          throw new TRPCError({ 
+            code: "FORBIDDEN",
+            message: "You don't have access to this organization"
+          });
+        }
+        
+        return ctx.db.campaign.findMany({
+          where: { organizationId: input.organizationId },
+          orderBy: { createdAt: "desc" },
+          include: {
+            _count: {
+              select: { calls: true, hypotheses: true },
+            },
+          },
+        });
+      }
+      
+      // Return campaigns from all user's orgs
+      return ctx.db.campaign.findMany({
+        where: { organizationId: { in: orgIds } },
+        orderBy: { createdAt: "desc" },
+        include: {
+          _count: {
+            select: { calls: true, hypotheses: true },
           },
         },
-      },
-    });
-  }),
+      });
+    }),
 
   // Get a single campaign by ID
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const campaign = await ctx.db.campaign.findFirst({
-        where: {
-          id: input.id,
-          organizationId: ctx.organizationId,
-        },
+        where: { id: input.id },
         include: {
           calls: {
             orderBy: { createdAt: "desc" },
@@ -47,7 +63,18 @@ export const campaignRouter = createTRPCRouter({
       });
 
       if (!campaign) {
-        throw new Error("Campaign not found");
+        throw new TRPCError({ 
+          code: "NOT_FOUND",
+          message: "Campaign not found"
+        });
+      }
+
+      // Verify user has access to this campaign's org
+      if (!hasOrgAccess(ctx.memberships, campaign.organizationId)) {
+        throw new TRPCError({ 
+          code: "FORBIDDEN",
+          message: "You don't have access to this campaign"
+        });
       }
 
       return campaign;
@@ -57,6 +84,7 @@ export const campaignRouter = createTRPCRouter({
   create: adminProcedure
     .input(
       z.object({
+        organizationId: z.string(),
         name: z.string().min(1),
         category: z.string().min(1),
         checklistId: z.string().min(1),
@@ -64,10 +92,21 @@ export const campaignRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Verify user has admin access to this org
+      if (!hasOrgAdminAccess(ctx.memberships, input.organizationId)) {
+        throw new TRPCError({ 
+          code: "FORBIDDEN",
+          message: "You don't have admin access to this organization"
+        });
+      }
+
       return ctx.db.campaign.create({
         data: {
-          ...input,
-          organizationId: ctx.organizationId,
+          name: input.name,
+          category: input.category,
+          checklistId: input.checklistId,
+          promptTemplate: input.promptTemplate,
+          organizationId: input.organizationId,
           status: "DRAFT",
         },
       });
@@ -88,16 +127,25 @@ export const campaignRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
 
-      // Verify campaign belongs to user's org
-      const campaign = await ctx.db.campaign.findFirst({
-        where: {
-          id,
-          organizationId: ctx.organizationId,
-        },
+      // Fetch campaign to verify access
+      const campaign = await ctx.db.campaign.findUnique({
+        where: { id },
+        select: { organizationId: true },
       });
 
       if (!campaign) {
-        throw new Error("Campaign not found");
+        throw new TRPCError({ 
+          code: "NOT_FOUND",
+          message: "Campaign not found"
+        });
+      }
+
+      // Verify user has admin access
+      if (!hasOrgAdminAccess(ctx.memberships, campaign.organizationId)) {
+        throw new TRPCError({ 
+          code: "FORBIDDEN",
+          message: "You don't have admin access to this campaign"
+        });
       }
 
       return ctx.db.campaign.update({
@@ -110,16 +158,25 @@ export const campaignRouter = createTRPCRouter({
   delete: adminProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // Verify campaign belongs to user's org
-      const campaign = await ctx.db.campaign.findFirst({
-        where: {
-          id: input.id,
-          organizationId: ctx.organizationId,
-        },
+      // Fetch campaign to verify access
+      const campaign = await ctx.db.campaign.findUnique({
+        where: { id: input.id },
+        select: { organizationId: true },
       });
 
       if (!campaign) {
-        throw new Error("Campaign not found");
+        throw new TRPCError({ 
+          code: "NOT_FOUND",
+          message: "Campaign not found"
+        });
+      }
+
+      // Verify user has admin access
+      if (!hasOrgAdminAccess(ctx.memberships, campaign.organizationId)) {
+        throw new TRPCError({ 
+          code: "FORBIDDEN",
+          message: "You don't have admin access to this campaign"
+        });
       }
 
       return ctx.db.campaign.delete({
@@ -132,10 +189,7 @@ export const campaignRouter = createTRPCRouter({
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const campaign = await ctx.db.campaign.findFirst({
-        where: {
-          id: input.id,
-          organizationId: ctx.organizationId,
-        },
+        where: { id: input.id },
         include: {
           calls: {
             select: {
@@ -156,7 +210,18 @@ export const campaignRouter = createTRPCRouter({
       });
 
       if (!campaign) {
-        throw new Error("Campaign not found");
+        throw new TRPCError({ 
+          code: "NOT_FOUND",
+          message: "Campaign not found"
+        });
+      }
+
+      // Verify user has access
+      if (!hasOrgAccess(ctx.memberships, campaign.organizationId)) {
+        throw new TRPCError({ 
+          code: "FORBIDDEN",
+          message: "You don't have access to this campaign"
+        });
       }
 
       const totalCalls = campaign.calls.length;

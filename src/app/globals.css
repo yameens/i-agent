@@ -8,7 +8,7 @@
   --brand: #0F1C3F;    /* dark blue */
   --ink: #0A0A0A;      /* near-black text */
   --bg: #FFFFFF;       /* white background */
-  --muted: oklch(0.97 0 0);    /* light gray surfaces */
+  --muted: #F5F7FB;    /* light gray surfaces */
 
   /* Tailwind mappings */
 

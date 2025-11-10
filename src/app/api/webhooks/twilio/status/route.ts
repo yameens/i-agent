@@ -1,16 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/db";
+import { verifyAndDeduplicateWebhook } from "@/lib/webhook-security";
 
 export async function POST(request: NextRequest) {
   try {
     const callId = request.nextUrl.searchParams.get("callId");
-    const formData = await request.formData();
-    const callStatus = formData.get("CallStatus")?.toString();
-    const callDuration = formData.get("CallDuration")?.toString();
 
     if (!callId) {
       return NextResponse.json({ error: "Missing callId" }, { status: 400 });
     }
+
+    // Verify signature and check for duplicates
+    const verification = await verifyAndDeduplicateWebhook(request, "status");
+
+    if (!verification.isValid) {
+      console.error("Invalid Twilio signature for status webhook");
+      return NextResponse.json(
+        { error: "Invalid signature" },
+        { status: 403 }
+      );
+    }
+
+    if (verification.isDuplicate) {
+      console.log("Duplicate status webhook event, ignoring");
+      return NextResponse.json({ success: true, duplicate: true });
+    }
+
+    const formData = verification.formData!;
+    const callStatus = formData.get("CallStatus")?.toString();
+    const callDuration = formData.get("CallDuration")?.toString();
 
     // Map Twilio status to our status
     let status: "QUEUED" | "RINGING" | "IN_PROGRESS" | "COMPLETED" | "FAILED" | "NO_ANSWER" = "QUEUED";

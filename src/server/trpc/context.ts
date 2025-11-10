@@ -1,6 +1,13 @@
 import { db } from "@/server/db";
 import { createClient } from "@/lib/supabase/server";
 
+export type UserMembership = {
+  organizationId: string;
+  organizationName: string;
+  organizationSlug: string;
+  role: "OWNER" | "ADMIN" | "MEMBER";
+};
+
 export async function createTRPCContext() {
   const supabase = await createClient();
   
@@ -8,27 +15,35 @@ export async function createTRPCContext() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // If user is authenticated, fetch their organization
-  let organizationId: string | null = null;
-  let userRole: string | null = null;
+  // If user is authenticated, fetch their memberships
+  let memberships: UserMembership[] = [];
 
   if (user) {
-    const dbUser = await db.user.findUnique({
-      where: { id: user.id },
-      select: { organizationId: true, role: true },
+    const userMemberships = await db.membership.findMany({
+      where: { userId: user.id },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
     });
 
-    if (dbUser) {
-      organizationId = dbUser.organizationId;
-      userRole = dbUser.role;
-    }
+    memberships = userMemberships.map((m) => ({
+      organizationId: m.organizationId,
+      organizationName: m.organization.name,
+      organizationSlug: m.organization.slug,
+      role: m.role as "OWNER" | "ADMIN" | "MEMBER",
+    }));
   }
 
   return {
     db,
     user,
-    organizationId,
-    userRole,
+    memberships,
   };
 }
 

@@ -1,16 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/db";
 import twilio from "twilio";
+import { verifyAndDeduplicateWebhook } from "@/lib/webhook-security";
 
 export async function POST(request: NextRequest) {
   try {
     const callId = request.nextUrl.searchParams.get("callId");
-    const formData = await request.formData();
-    const speechResult = formData.get("SpeechResult")?.toString().toLowerCase();
 
     if (!callId) {
       return NextResponse.json({ error: "Missing callId" }, { status: 400 });
     }
+
+    // Verify signature and check for duplicates
+    const verification = await verifyAndDeduplicateWebhook(request, "consent");
+
+    if (!verification.isValid) {
+      console.error("Invalid Twilio signature for consent webhook");
+      return NextResponse.json(
+        { error: "Invalid signature" },
+        { status: 403 }
+      );
+    }
+
+    if (verification.isDuplicate) {
+      console.log("Duplicate consent webhook event, ignoring");
+      return NextResponse.json({ success: true, duplicate: true });
+    }
+
+    const formData = verification.formData!;
+    const speechResult = formData.get("SpeechResult")?.toString().toLowerCase();
 
     const call = await db.call.findUnique({
       where: { id: callId },

@@ -2,12 +2,49 @@ import { inngest } from "../client";
 import { db } from "@/server/db";
 import { openaiClient } from "@/lib/openai";
 import { buildRAGContext } from "@/lib/rag";
+import {
+  ClaimParser,
+  ParseFailureLogger,
+  buildExtractionPrompt,
+} from "@/lib/parsers/claim-parser";
+import type { Claim } from "@/lib/schemas/claim";
 
-interface ExtractedClaim {
-  text: string;
-  timestamp: number;
-  confidence: number;
-  hypothesisQuestion?: string;
+/**
+ * Generate human-readable text from structured claim
+ */
+function generateClaimText(claim: Claim): string {
+  const parts: string[] = [];
+  
+  // Add field type
+  parts.push(`[${claim.field}]`);
+  
+  // Add value
+  if (claim.valueNumber !== undefined) {
+    const value = claim.unit
+      ? `${claim.valueNumber} ${claim.unit}`
+      : claim.valueNumber.toString();
+    parts.push(value);
+  }
+  
+  if (claim.valueText) {
+    parts.push(claim.valueText);
+  }
+  
+  // Add identifiers
+  if (claim.skuId) {
+    parts.push(`(SKU: ${claim.skuId})`);
+  }
+  
+  if (claim.geoCode) {
+    parts.push(`(Region: ${claim.geoCode})`);
+  }
+  
+  // Add raw text if available
+  if (claim.rawText) {
+    parts.push(`- "${claim.rawText}"`);
+  }
+  
+  return parts.join(" ");
 }
 
 export const extractClaims = inngest.createFunction(
@@ -38,44 +75,27 @@ export const extractClaims = inngest.createFunction(
       return buildRAGContext(campaign.category, transcript);
     });
 
-    // Step 3: Extract claims using GPT-4
+    // Step 3: Extract claims using GPT-4 with typed schema
     const extractedClaims = await step.run(
       "extract-claims-with-gpt4",
       async () => {
-        const systemPrompt = `You are an expert analyst extracting factual claims from channel-check call transcripts.
+        // Build structured extraction prompt
+        const prompt = buildExtractionPrompt({
+          transcript,
+          hypotheses: campaign.hypotheses.map((h) => ({
+            id: h.id,
+            question: h.question,
+          })),
+          ragContext,
+          category: campaign.category,
+        });
 
-Your task:
-1. Identify specific, verifiable claims made by the respondent
-2. Assign a confidence score (0-1) based on how clearly the claim was stated
-3. Note the approximate timestamp in the conversation
-4. Match claims to relevant hypotheses if applicable
-
-Checklist context:
-${ragContext}
-
-Campaign hypotheses:
-${campaign.hypotheses.map((h) => `- ${h.question}`).join("\n")}
-
-Return a JSON array of claims with this structure:
-{
-  "claims": [
-    {
-      "text": "The specific claim made",
-      "timestamp": 45.5,
-      "confidence": 0.85,
-      "hypothesisQuestion": "Which hypothesis this relates to (if any)"
-    }
-  ]
-}`;
-
+        // Call OpenAI with structured prompt
         const response = await openaiClient.chat.completions.create({
           model: "gpt-4o",
           messages: [
-            { role: "system", content: systemPrompt },
-            {
-              role: "user",
-              content: `Extract claims from this transcript:\n\n${transcript}`,
-            },
+            { role: "system", content: prompt.system },
+            { role: "user", content: prompt.user },
           ],
           response_format: { type: "json_object" },
           temperature: 0.3,
@@ -86,12 +106,29 @@ Return a JSON array of claims with this structure:
           throw new Error("No response from GPT-4");
         }
 
-        const parsed = JSON.parse(content);
-        return parsed.claims as ExtractedClaim[];
+        // Parse and validate with robust parser
+        const parseResult = ClaimParser.parseWithRepair(content);
+
+        if (!parseResult.success) {
+          // Log failure for review
+          ParseFailureLogger.log({
+            timestamp: new Date(),
+            callId,
+            rawOutput: content,
+            error: parseResult.error,
+            rawData: parseResult.rawData,
+          });
+
+          throw new Error(
+            `Failed to parse claims from model output: ${parseResult.error}`
+          );
+        }
+
+        return parseResult.data.claims;
       }
     );
 
-    // Step 4: Save claims to database
+    // Step 4: Save claims to database with structured fields
     const savedClaims = await step.run("save-claims", async () => {
       const call = await db.call.findUnique({
         where: { id: callId },
@@ -101,31 +138,40 @@ Return a JSON array of claims with this structure:
       const claims = [];
 
       for (const claim of extractedClaims) {
-        // Find matching hypothesis
-        let hypothesisId: string | undefined;
-        if (claim.hypothesisQuestion) {
-          const hypothesis = campaign.hypotheses.find((h) =>
-            h.question
-              .toLowerCase()
-              .includes(claim.hypothesisQuestion!.toLowerCase())
-          );
-          hypothesisId = hypothesis?.id;
-        }
-
         // Build evidence URL with timestamp
         const evidenceUrl = call?.recordingUrl
-          ? `${call.recordingUrl}#t=${Math.floor(claim.timestamp)}`
+          ? `${call.recordingUrl}#t=${Math.floor(claim.startSec)}`
           : "";
+
+        // Generate human-readable text for backward compatibility
+        const humanReadableText = generateClaimText(claim);
 
         const savedClaim = await db.claim.create({
           data: {
             callId,
-            hypothesisId,
-            text: claim.text,
+            hypothesisId: claim.hypothesisId,
+            
+            // Structured fields
+            field: claim.field,
+            valueNumber: claim.valueNumber,
+            valueText: claim.valueText,
+            unit: claim.unit,
+            skuId: claim.skuId,
+            geoCode: claim.geoCode,
+            
+            // Legacy text field
+            text: humanReadableText,
+            
+            // Temporal and evidence
             evidenceUrl,
-            timestamp: claim.timestamp,
+            startSec: claim.startSec,
+            endSec: claim.endSec,
+            
+            // Metadata
             confidence: claim.confidence,
             validated: false,
+            rawText: claim.rawText,
+            context: claim.context,
           },
         });
 
@@ -174,4 +220,3 @@ Return a JSON array of claims with this structure:
     };
   }
 );
-

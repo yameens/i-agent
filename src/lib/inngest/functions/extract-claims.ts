@@ -112,16 +112,16 @@ export const extractClaims = inngest.createFunction(
         if (!parseResult.success) {
           // Log failure for review
           ParseFailureLogger.log({
-            timestamp: new Date(),
-            callId,
-            rawOutput: content,
-            error: parseResult.error,
-            rawData: parseResult.rawData,
-          });
+          timestamp: new Date(),
+          callId,
+          rawOutput: content,
+          error: "error" in parseResult ? parseResult.error : undefined,
+          rawData: "rawData" in parseResult ? parseResult.rawData : undefined,
+        });
 
-          throw new Error(
-            `Failed to parse claims from model output: ${parseResult.error}`
-          );
+        throw new Error(
+          `Failed to parse claims from model output: ${"error" in parseResult ? parseResult.error : "Unknown error"}`
+        );
         }
 
         return parseResult.data.claims;
@@ -144,7 +144,7 @@ export const extractClaims = inngest.createFunction(
           : "";
 
         // Generate human-readable text for backward compatibility
-        const humanReadableText = generateClaimText(claim);
+        const humanReadableText = generateClaimText(claim as any);
 
         const savedClaim = await db.claim.create({
           data: {

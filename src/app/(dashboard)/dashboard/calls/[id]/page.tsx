@@ -35,14 +35,15 @@ export default function CallDetailPage({
     );
   }
 
-  const statusColor = {
+  const statusColorMap: Record<string, string> = {
     QUEUED: "bg-gray-100 text-gray-700",
     RINGING: "bg-blue-100 text-blue-700",
     IN_PROGRESS: "bg-yellow-100 text-yellow-700",
     COMPLETED: "bg-green-100 text-green-700",
     FAILED: "bg-red-100 text-red-700",
     NO_ANSWER: "bg-orange-100 text-orange-700",
-  }[call.status];
+  };
+  const statusColor = statusColorMap[call.status] || "bg-gray-100 text-gray-700";
 
   return (
     <div className="space-y-6">
@@ -119,7 +120,7 @@ export default function CallDetailPage({
             <div className="flex justify-between">
               <span className="text-muted-foreground">Validated Claims:</span>
               <span className="font-medium">
-                {call.claims.filter((c) => c.validated).length}
+                {call.claims.filter((c: { validated: boolean }) => c.validated).length}
               </span>
             </div>
           </CardContent>
@@ -148,7 +149,13 @@ export default function CallDetailPage({
           <CardContent>
             <div className="space-y-4">
               {call.utterances.length > 0 ? (
-                call.utterances.map((utterance) => (
+                call.utterances.map((utterance: {
+                  id: string;
+                  speaker: string;
+                  text: string;
+                  timestamp: number;
+                  confidence?: number;
+                }) => (
                   <div
                     key={utterance.id}
                     className={`p-3 rounded-lg ${
@@ -194,7 +201,14 @@ export default function CallDetailPage({
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {call.claims.map((claim) => (
+              {call.claims.map((claim: {
+                id: string;
+                text: string;
+                validated: boolean;
+                confidence: number;
+                evidenceUrl: string;
+                hypothesis?: { id: string; question: string } | null;
+              }) => (
                 <div
                   key={claim.id}
                   className="p-4 border rounded-lg hover:shadow-sm transition-shadow"

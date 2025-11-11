@@ -1,4 +1,5 @@
-# Diligence Dialer - Main Application Dockerfile
+# Rondo - Main Application Dockerfile
+# Continuous Consumer Intelligence Platform
 
 FROM node:20-alpine AS base
 

@@ -1,8 +1,8 @@
 import { Inngest } from "inngest";
 
 export const inngest = new Inngest({
-  id: "diligence-dialer",
-  name: "Diligence Dialer",
+  id: "rondo",
+  name: "Rondo",
 });
 
 // Event types

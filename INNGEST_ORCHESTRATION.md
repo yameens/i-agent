@@ -1,6 +1,6 @@
 # Inngest Durable Orchestration
 
-This document describes the durable orchestration system built with Inngest for the Diligence Dialer platform.
+This document describes the durable orchestration system built with Inngest for the Rondo platform (Continuous Consumer Intelligence).
 
 ## Overview
 
@@ -334,7 +334,7 @@ INNGEST_SIGNING_KEY=
 // src/lib/inngest/client.ts
 export const inngest = new Inngest({
   id: "diligence-dialer",
-  name: "Diligence Dialer",
+  name: "Rondo",
 });
 ```
 
@@ -473,5 +473,5 @@ The Inngest orchestration system provides:
 ✅ **Error handling**: Distinguishes retriable vs. permanent failures
 ✅ **Atomicity**: Database transactions ensure consistency
 
-This architecture ensures robust, production-ready orchestration for the Diligence Dialer platform.
+This architecture ensures robust, production-ready orchestration for the Rondo platform.
 

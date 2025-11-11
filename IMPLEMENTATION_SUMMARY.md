@@ -1,8 +1,10 @@
-# Diligence Dialer - Implementation Summary
+# Rondo - Implementation Summary
+
+**Continuous Consumer Intelligence Platform**
 
 ## Overview
 
-Successfully implemented a complete multi-tenant SaaS platform for autonomous PSTN channel-check calls with evidence-based claim validation. The system is production-ready with all core features implemented according to the architectural plan.
+Successfully implemented a complete multi-tenant SaaS platform for automated retail interviews with evidence-linked signal extraction. The system is production-ready with all core features implemented according to the architectural plan.
 
 ## ✅ Completed Implementation
 
@@ -370,7 +372,7 @@ Update Twilio webhook URLs to point to worker service:
 
 ## Conclusion
 
-The Diligence Dialer platform is **production-ready** with all core features implemented:
+The Rondo platform is **production-ready** with all core features implemented:
 
 ✅ Multi-tenant architecture with RLS  
 ✅ PSTN call orchestration via Twilio  

@@ -43,31 +43,31 @@ export function Nav({ user, organizationName }: NavProps) {
     <nav className="border-b bg-background">
       <div className="flex h-16 items-center px-6">
         <Link href="/dashboard" className="flex items-center space-x-2">
-          <span className="text-xl font-bold text-brand">Diligence Dialer</span>
+          <span className="text-xl font-bold text-brand-950">Rondo</span>
         </Link>
 
         <div className="ml-8 flex space-x-6">
           <Link
             href="/dashboard"
-            className="text-sm font-medium transition-colors hover:text-brand"
+            className="text-sm font-medium transition-colors hover:text-brand-600"
           >
             Campaigns
           </Link>
           <Link
             href="/dashboard/calls"
-            className="text-sm font-medium transition-colors hover:text-brand"
+            className="text-sm font-medium transition-colors hover:text-brand-600"
           >
             Calls
           </Link>
           <Link
             href="/dashboard/insights"
-            className="text-sm font-medium transition-colors hover:text-brand"
+            className="text-sm font-medium transition-colors hover:text-brand-600"
           >
             Insights
           </Link>
           <Link
             href="/dashboard/settings"
-            className="text-sm font-medium transition-colors hover:text-brand"
+            className="text-sm font-medium transition-colors hover:text-brand-600"
           >
             Settings
           </Link>
@@ -81,7 +81,7 @@ export function Nav({ user, organizationName }: NavProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-brand text-white">
+                  <AvatarFallback className="bg-brand-600 text-white">
                     {initials}
                   </AvatarFallback>
                 </Avatar>

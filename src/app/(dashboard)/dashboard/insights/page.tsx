@@ -14,6 +14,9 @@ import {
   AlertCircle,
   Activity,
   FileText,
+  Users,
+  MapPin,
+  Package,
 } from "lucide-react";
 
 export default function InsightsPage() {
@@ -63,7 +66,7 @@ export default function InsightsPage() {
     }));
   }, [validatedClaims]);
 
-  // Calculate KPIs
+  // Calculate KPIs with coverage metrics
   const kpis = useMemo(() => {
     if (!validatedClaims || !hypotheses) {
       return {
@@ -71,6 +74,9 @@ export default function InsightsPage() {
         validatedSignals: 0,
         avgConfidence: 0,
         hypothesesValidated: 0,
+        uniqueSkus: 0,
+        uniqueGeos: 0,
+        panelSize: 0,
       };
     }
 
@@ -82,11 +88,25 @@ export default function InsightsPage() {
       (h) => h.status === "VALIDATED"
     ).length;
 
+    // Coverage metrics
+    const uniqueSkus = new Set(
+      validatedClaims.map((c) => c.skuId).filter(Boolean)
+    ).size;
+    const uniqueGeos = new Set(
+      validatedClaims.map((c) => c.geoCode).filter(Boolean)
+    ).size;
+    const panelSize = new Set(
+      validatedClaims.map((c) => c.call.phoneNumber)
+    ).size;
+
     return {
       totalSignals: validatedClaims.length,
       validatedSignals: validatedCount,
       avgConfidence: avgConfidence * 100,
       hypothesesValidated: hypothesesValidatedCount,
+      uniqueSkus,
+      uniqueGeos,
+      panelSize,
     };
   }, [validatedClaims, hypotheses]);
 
@@ -101,9 +121,9 @@ export default function InsightsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-ink">Insights</h1>
+        <h1 className="text-3xl font-bold text-brand-950">This Week&apos;s Signals</h1>
         <p className="text-muted-foreground mt-1">
-          View validated claims and hypothesis analysis
+          Validated insights from your retail panel, refreshed weekly
         </p>
       </div>
 
@@ -133,7 +153,7 @@ export default function InsightsPage() {
                 You don&apos;t have any campaigns yet. Create a campaign to start
                 collecting insights.
               </p>
-              <Button className="bg-brand hover:bg-brand/90">
+              <Button className="bg-brand-600 hover:bg-brand-600/90 text-white">
                 Create Campaign
               </Button>
             </div>
@@ -154,7 +174,7 @@ export default function InsightsPage() {
                 }
                 className={
                   selectedCampaignId === campaign.id
-                    ? "bg-brand hover:bg-brand/90"
+                    ? "bg-brand-600 hover:bg-brand-600/90 text-white"
                     : ""
                 }
                 onClick={() => setSelectedCampaignId(campaign.id)}
@@ -169,46 +189,75 @@ export default function InsightsPage() {
 
       {selectedCampaignId && (
         <>
-          {/* KPI Tiles */}
+          {/* Panel Health & Coverage */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <KPITile
-              title="Total Signals"
+              title="Panel Health"
+              value={kpis.panelSize}
+              subtitle="active contacts this week"
+              icon={Users}
+              isLoading={isLoading}
+              className="bg-muted"
+            />
+            <KPITile
+              title="Coverage: SKUs"
+              value={kpis.uniqueSkus}
+              subtitle="products tracked"
+              icon={Package}
+              isLoading={isLoading}
+              className="bg-muted"
+            />
+            <KPITile
+              title="Coverage: Regions"
+              value={kpis.uniqueGeos}
+              subtitle="geographies covered"
+              icon={MapPin}
+              isLoading={isLoading}
+              className="bg-muted"
+            />
+            <KPITile
+              title="Consistency Score"
+              value={`${kpis.avgConfidence.toFixed(0)}%`}
+              subtitle="avg confidence"
+              icon={TrendingUp}
+              isLoading={isLoading}
+              className="bg-muted"
+            />
+          </div>
+
+          {/* This Week's Signals Summary */}
+          <div className="grid gap-4 md:grid-cols-3">
+            <KPITile
+              title="This Week's Signals"
               value={kpis.totalSignals}
-              subtitle="claims extracted"
+              subtitle="extracted from interviews"
               icon={Activity}
               isLoading={isLoading}
             />
             <KPITile
-              title="Validated"
+              title="Validated Signals"
               value={kpis.validatedSignals}
-              subtitle="triangulated claims"
+              subtitle="triangulated across sources"
               icon={CheckCircle2}
               isLoading={isLoading}
             />
             <KPITile
-              title="Avg Confidence"
-              value={`${kpis.avgConfidence.toFixed(0)}%`}
-              subtitle="across all signals"
-              icon={TrendingUp}
-              isLoading={isLoading}
-            />
-            <KPITile
-              title="Hypotheses"
+              title="Trend Movements"
               value={kpis.hypothesesValidated}
-              subtitle="validated"
+              subtitle="hypotheses confirmed"
               icon={AlertCircle}
               isLoading={isLoading}
             />
           </div>
 
           {/* Signals Table */}
-          <Card>
+          <Card className="bg-muted">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Signals</CardTitle>
+                  <CardTitle className="text-brand-950">Evidence Drawer</CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Click any signal to view evidence
+                    Click any signal to view timestamped audio evidence and transcript
                   </p>
                 </div>
                 <div className="flex gap-2">

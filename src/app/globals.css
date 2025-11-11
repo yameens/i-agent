@@ -4,11 +4,13 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Design System Tokens */
-  --brand: #0F1C3F;    /* dark blue */
-  --ink: #0A0A0A;      /* near-black text */
-  --bg: #FFFFFF;       /* white background */
-  --muted: #F5F7FB;    /* light gray surfaces */
+  /* Rondo Design System Tokens */
+  --brand-950: #0F1C3F;  /* deep navy - primary brand */
+  --brand-600: #1E2E6E;  /* medium blue - interactive states */
+  --brand: #0F1C3F;      /* alias for primary brand */
+  --ink: #0A0A0A;        /* near-black text */
+  --bg: #FFFFFF;         /* white background */
+  --muted: #F5F7FB;      /* light gray surfaces */
 
   /* Tailwind mappings */
 
@@ -79,7 +81,10 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-brand: var(--brand);
+  --color-brand-950: var(--brand-950);
+  --color-brand-600: var(--brand-600);
   --color-ink: var(--ink);
+  --color-bg: var(--bg);
   --color-muted: var(--muted);
   --font-sans: var(--font-inter);
   --color-sidebar-ring: var(--sidebar-ring);

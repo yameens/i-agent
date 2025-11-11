@@ -1,4 +1,6 @@
-# Deployment Guide - Diligence Dialer
+# Deployment Guide - Rondo
+
+**Continuous Consumer Intelligence Platform**
 
 ## 🚀 Quick Deploy Options
 

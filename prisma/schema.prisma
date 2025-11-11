@@ -1,4 +1,5 @@
-// Diligence Dialer - Multi-tenant Schema
+// Rondo - Multi-tenant Schema
+// Continuous Consumer Intelligence Platform
 // Supabase Postgres with RLS policies
 
 generator client {

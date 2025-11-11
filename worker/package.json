@@ -1,7 +1,7 @@
 {
-  "name": "diligence-dialer-worker",
+  "name": "rondo-worker",
   "version": "1.0.0",
-  "description": "Worker service for Diligence Dialer - handles Twilio webhooks and Inngest functions",
+  "description": "Worker service for Rondo - handles Twilio webhooks and Inngest functions",
   "main": "index.ts",
   "scripts": {
     "dev": "tsx watch index.ts",

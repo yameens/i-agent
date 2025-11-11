@@ -1,5 +1,6 @@
 -- ============================================================================
--- Diligence Dialer - RLS Policies with Membership-based Access Control
+-- Rondo - Continuous Consumer Intelligence Platform
+-- RLS Policies with Membership-based Access Control
 -- ============================================================================
 
 -- Enable Row Level Security on all tables

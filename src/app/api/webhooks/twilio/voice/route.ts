@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       {
         voice: "Polly.Joanna",
       },
-      "Hello, this is an automated channel check call from Diligence Dialer."
+      "Hello, this is an automated retail interview from Rondo."
     );
 
     // Ask for consent

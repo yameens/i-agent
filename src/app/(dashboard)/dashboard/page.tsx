@@ -74,12 +74,12 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-ink">Campaigns</h1>
+          <h1 className="text-3xl font-bold text-brand-950">Campaigns</h1>
           <p className="text-muted-foreground mt-1">
-            Manage your channel-check campaigns
+            Manage your automated interview campaigns
           </p>
         </div>
-        <Button asChild className="bg-brand hover:bg-brand/90">
+        <Button asChild className="bg-brand-600 hover:bg-brand-600/90 text-white">
           <Link href="/dashboard/campaigns/new">Create Campaign</Link>
         </Button>
       </div>
@@ -118,17 +118,16 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle>No campaigns yet</CardTitle>
             <CardDescription>
-              Create your first campaign to start making channel-check calls
+              Create your first campaign to start automated retail interviews
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col items-center gap-4 py-8">
               <TrendingUp className="h-12 w-12 text-muted-foreground opacity-50" />
               <p className="text-sm text-muted-foreground text-center max-w-md">
-                Get started by creating a campaign. You&apos;ll be able to configure
-                call scripts, set up hypotheses, and start gathering insights.
+                Get started by creating a campaign. Configure your panel, set up interview scripts, and start gathering continuous intelligence.
               </p>
-            <Button asChild className="bg-brand hover:bg-brand/90">
+            <Button asChild className="bg-brand-600 hover:bg-brand-600/90 text-white">
                 <Link href="/dashboard/campaigns/new">
                   Create Your First Campaign
                 </Link>
@@ -147,7 +146,7 @@ export default function DashboardPage() {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div>
-                      <CardTitle className="text-lg text-ink">
+                      <CardTitle className="text-lg text-brand-950">
                         {campaign.name}
                       </CardTitle>
                       <CardDescription className="mt-1">

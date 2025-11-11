@@ -50,11 +50,11 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-muted p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-brand">
-            Diligence Dialer
+          <CardTitle className="text-2xl font-bold text-brand-950">
+            Rondo
           </CardTitle>
           <CardDescription>
-            Sign in to your account to continue
+            Continuous Consumer Intelligence
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
@@ -91,7 +91,7 @@ export default function LoginPage() {
           <CardFooter className="flex flex-col space-y-4">
             <Button
               type="submit"
-              className="w-full bg-brand hover:bg-brand/90"
+              className="w-full bg-brand-600 hover:bg-brand-600/90 text-white"
               disabled={loading}
             >
               {loading ? "Signing in..." : "Sign In"}
@@ -100,7 +100,7 @@ export default function LoginPage() {
               Don&apos;t have an account?{" "}
               <Link
                 href="/signup"
-                className="text-brand hover:underline font-medium"
+                className="text-brand-600 hover:underline font-medium"
               >
                 Sign up
               </Link>

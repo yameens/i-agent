@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Diligence Dialer - Vercel Deployment Script
+# Rondo - Vercel Deployment Script
 
 set -e
 

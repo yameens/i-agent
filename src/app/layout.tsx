@@ -9,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Diligence Dialer",
-  description: "Autonomous channel-check calls with evidence-based claim validation",
+  title: "Rondo — Continuous Consumer Intelligence",
+  description: "Automated weekly interviews with your retail panel. Structured signals with evidence, refreshed on a schedule.",
 };
 
 export default function RootLayout({

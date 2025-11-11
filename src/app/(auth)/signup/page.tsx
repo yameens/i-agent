@@ -60,11 +60,11 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center bg-muted p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-brand">
+          <CardTitle className="text-2xl font-bold text-brand-950">
             Create Account
           </CardTitle>
           <CardDescription>
-            Get started with Diligence Dialer
+            Start gathering continuous consumer intelligence
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSignup}>
@@ -115,7 +115,7 @@ export default function SignupPage() {
           <CardFooter className="flex flex-col space-y-4">
             <Button
               type="submit"
-              className="w-full bg-brand hover:bg-brand/90"
+              className="w-full bg-brand-600 hover:bg-brand-600/90 text-white"
               disabled={loading}
             >
               {loading ? "Creating account..." : "Create Account"}
@@ -124,7 +124,7 @@ export default function SignupPage() {
               Already have an account?{" "}
               <Link
                 href="/login"
-                className="text-brand hover:underline font-medium"
+                className="text-brand-600 hover:underline font-medium"
               >
                 Sign in
               </Link>

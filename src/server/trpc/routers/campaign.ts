@@ -84,46 +84,62 @@ export const campaignRouter = createTRPCRouter({
   create: adminProcedure
     .input(
       z.object({
-        organizationId: z.string(),
+        organizationId: z.string().optional(),
         name: z.string().min(1),
-        category: z.string().min(1).default("Retail"),
-        checklistId: z.string().min(1).optional().default("default"),
+        category: z.string().default("Retail"),
+        geos: z.string().optional(),
+        skus: z.string().optional(),
+        panelSize: z.number().optional(),
+        weeklyCadence: z.string().optional().default("weekly"),
+        notes: z.string().optional(),
+        checklistId: z.string().optional().default("default"),
         promptTemplate: z.string().optional(),
-        // New panel fields (optional)
-        panel: z.object({
-          companies: z.array(z.string()),
-          regions: z.array(z.string()),
-          size: z.number().optional(),
-        }).optional(),
-        cadence: z.string().optional().default("WEEKLY"),
-        window: z.object({
-          days: z.array(z.string()), // ["Mon", "Tue", "Wed", "Thu", "Fri"]
-          start: z.string(), // "09:00"
-          end: z.string(), // "17:00"
-          tz: z.string(), // "America/Los_Angeles"
-        }).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Get organizationId from input or use first membership
+      const organizationId = input.organizationId || ctx.memberships[0]?.organizationId;
+      
+      if (!organizationId) {
+        throw new TRPCError({ 
+          code: "BAD_REQUEST",
+          message: "No organization found for user"
+        });
+      }
+
       // Verify user has admin access to this org
-      if (!hasOrgAdminAccess(ctx.memberships, input.organizationId)) {
+      if (!hasOrgAdminAccess(ctx.memberships, organizationId)) {
         throw new TRPCError({ 
           code: "FORBIDDEN",
           message: "You don't have admin access to this organization"
         });
       }
 
-      const { panel, cadence, window, ...baseData } = input;
+      // Parse comma-separated lists
+      const geosList = input.geos 
+        ? input.geos.split(',').map(g => g.trim()).filter(Boolean)
+        : [];
+      const skusList = input.skus 
+        ? input.skus.split(',').map(s => s.trim()).filter(Boolean)
+        : [];
+
+      // Build panel object
+      const panel = {
+        companies: [],
+        regions: geosList,
+        size: input.panelSize || 0,
+      };
 
       return ctx.db.campaign.create({
         data: {
-          ...baseData,
-          promptTemplate: input.promptTemplate || "Default retail interview script",
+          organizationId,
+          name: input.name,
+          category: input.category,
+          checklistId: input.checklistId || "default",
+          promptTemplate: input.promptTemplate || input.notes || "Default retail interview script",
           status: "DRAFT",
-          // Store panel, cadence, window as JSON
-          panel: panel ? panel as any : undefined,
-          cadence: cadence || "WEEKLY",
-          window: window ? window as any : undefined,
+          panel: panel as any,
+          cadence: input.weeklyCadence?.toUpperCase() || "WEEKLY",
         },
       });
     }),

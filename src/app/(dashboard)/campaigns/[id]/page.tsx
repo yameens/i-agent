@@ -42,7 +42,7 @@ export default function CampaignDetailPage({
     return (
       <div className="space-y-6">
         <Link
-          href="/dashboard"
+          href="/campaigns"
           className="inline-flex items-center text-sm text-muted-foreground hover:text-brand-600"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -56,9 +56,9 @@ export default function CampaignDetailPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button asChild className="bg-brand-600 hover:bg-brand-600/90 text-white">
-              <Link href="/dashboard">Back to Campaigns</Link>
-            </Button>
+               <Button asChild className="bg-brand-600 hover:bg-brand-600/90 text-white">
+                 <Link href="/campaigns">Back to Campaigns</Link>
+               </Button>
           </CardContent>
         </Card>
       </div>
@@ -70,7 +70,7 @@ export default function CampaignDetailPage({
       {/* Header */}
       <div>
         <Link
-          href="/dashboard"
+          href="/campaigns"
           className="inline-flex items-center text-sm text-muted-foreground hover:text-brand-600 mb-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />

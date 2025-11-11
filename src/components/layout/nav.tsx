@@ -48,25 +48,25 @@ export function Nav({ user, organizationName }: NavProps) {
 
         <div className="ml-8 flex space-x-6">
           <Link
-            href="/dashboard"
+            href="/campaigns"
             className="text-sm font-medium transition-colors hover:text-brand-600"
           >
             Campaigns
           </Link>
           <Link
-            href="/dashboard/calls"
+            href="/calls"
             className="text-sm font-medium transition-colors hover:text-brand-600"
           >
             Calls
           </Link>
           <Link
-            href="/dashboard/insights"
+            href="/insights"
             className="text-sm font-medium transition-colors hover:text-brand-600"
           >
             Insights
           </Link>
           <Link
-            href="/dashboard/settings"
+            href="/settings"
             className="text-sm font-medium transition-colors hover:text-brand-600"
           >
             Settings
@@ -100,10 +100,10 @@ export function Nav({ user, organizationName }: NavProps) {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/dashboard/settings">Settings</Link>
+                <Link href="/settings">Settings</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/dashboard/settings/integrations">
+                <Link href="/settings/integrations">
                   Integrations
                 </Link>
               </DropdownMenuItem>

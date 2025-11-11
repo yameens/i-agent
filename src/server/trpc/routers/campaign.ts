@@ -86,9 +86,22 @@ export const campaignRouter = createTRPCRouter({
       z.object({
         organizationId: z.string(),
         name: z.string().min(1),
-        category: z.string().min(1),
-        checklistId: z.string().min(1),
-        promptTemplate: z.string().min(1),
+        category: z.string().min(1).default("Retail"),
+        checklistId: z.string().min(1).optional().default("default"),
+        promptTemplate: z.string().optional(),
+        // New panel fields (optional)
+        panel: z.object({
+          companies: z.array(z.string()),
+          regions: z.array(z.string()),
+          size: z.number().optional(),
+        }).optional(),
+        cadence: z.string().optional().default("WEEKLY"),
+        window: z.object({
+          days: z.array(z.string()), // ["Mon", "Tue", "Wed", "Thu", "Fri"]
+          start: z.string(), // "09:00"
+          end: z.string(), // "17:00"
+          tz: z.string(), // "America/Los_Angeles"
+        }).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -100,14 +113,17 @@ export const campaignRouter = createTRPCRouter({
         });
       }
 
+      const { panel, cadence, window, ...baseData } = input;
+
       return ctx.db.campaign.create({
         data: {
-          name: input.name,
-          category: input.category,
-          checklistId: input.checklistId,
-          promptTemplate: input.promptTemplate,
-          organizationId: input.organizationId,
+          ...baseData,
+          promptTemplate: input.promptTemplate || "Default retail interview script",
           status: "DRAFT",
+          // Store panel, cadence, window as JSON
+          panel: panel ? panel as any : undefined,
+          cadence: cadence || "WEEKLY",
+          window: window ? window as any : undefined,
         },
       });
     }),

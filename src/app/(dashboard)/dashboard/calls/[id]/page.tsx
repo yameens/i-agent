@@ -114,11 +114,11 @@ export default function CallDetailPage({
               <span className="font-medium">{call.utterances.length}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Claims Extracted:</span>
+              <span className="text-muted-foreground">Signals Extracted:</span>
               <span className="font-medium">{call.claims.length}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Validated Claims:</span>
+              <span className="text-muted-foreground">Validated Signals:</span>
               <span className="font-medium">
                 {call.claims.filter((c: any) => c.validated).length}
               </span>
@@ -191,7 +191,7 @@ export default function CallDetailPage({
       {call.claims.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Extracted Claims</CardTitle>
+            <CardTitle>Extracted Signals</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">

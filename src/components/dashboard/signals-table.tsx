@@ -32,7 +32,9 @@ export interface Signal {
   timestamp: number;
   callId: string;
   phoneNumber: string;
-  evidenceUrl: string;
+  evidenceUrl?: string;
+  hypothesis?: string;
+  campaign?: string;
 }
 
 interface SignalsTableProps {

@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
         {
           voice: "Polly.Joanna",
         },
-        "Thank you for your consent. Let's begin the channel check."
+        "Thank you for your consent. Let's begin the retail interview."
       );
 
       // Use the campaign's prompt template
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
         {
           voice: "Polly.Joanna",
         },
-        "Thank you for your time. This concludes our channel check. Goodbye."
+        "Thank you for your time. This concludes our retail interview. Goodbye."
       );
       twiml.hangup();
     }

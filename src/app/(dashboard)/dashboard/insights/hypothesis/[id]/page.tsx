@@ -84,7 +84,7 @@ export default function HypothesisDetailPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>Supporting Claims ({hypothesis.claims.length})</CardTitle>
+          <CardTitle>Supporting Signals ({hypothesis.claims.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">

@@ -1,23 +1,100 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { trpc } from "@/lib/trpc/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { KPITile } from "@/components/dashboard/kpi-tile";
-import { SignalsTable, Signal } from "@/components/dashboard/signals-table";
 import { EvidenceDrawer } from "@/components/dashboard/evidence-drawer";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import {
   TrendingUp,
   CheckCircle2,
-  AlertCircle,
   Activity,
   FileText,
   Users,
   MapPin,
   Package,
+  Phone,
+  Clock,
+  BarChart3,
 } from "lucide-react";
+
+// Dynamic import for recharts (SSR-safe)
+const LineChart = dynamic(
+  () => import("recharts").then((mod) => mod.LineChart),
+  { ssr: false }
+);
+const BarChart = dynamic(
+  () => import("recharts").then((mod) => mod.BarChart),
+  { ssr: false }
+);
+const Line = dynamic(
+  () => import("recharts").then((mod) => mod.Line),
+  { ssr: false }
+);
+const Bar = dynamic(
+  () => import("recharts").then((mod) => mod.Bar),
+  { ssr: false }
+);
+const XAxis = dynamic(
+  () => import("recharts").then((mod) => mod.XAxis),
+  { ssr: false }
+);
+const YAxis = dynamic(
+  () => import("recharts").then((mod) => mod.YAxis),
+  { ssr: false }
+);
+const CartesianGrid = dynamic(
+  () => import("recharts").then((mod) => mod.CartesianGrid),
+  { ssr: false }
+);
+const Tooltip = dynamic(
+  () => import("recharts").then((mod) => mod.Tooltip),
+  { ssr: false }
+);
+const ResponsiveContainer = dynamic(
+  () => import("recharts").then((mod) => mod.ResponsiveContainer),
+  { ssr: false }
+);
+
+// Mock data for charts (feature flag controlled)
+const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === "true" || true; // Default true for demo
+
+const mockWeeklyVelocity = [
+  { week: "Week 1", signals: 12 },
+  { week: "Week 2", signals: 19 },
+  { week: "Week 3", signals: 15 },
+  { week: "Week 4", signals: 25 },
+  { week: "Week 5", signals: 22 },
+  { week: "Week 6", signals: 30 },
+];
+
+const mockStockoutsByRegion = [
+  { region: "California", count: 8 },
+  { region: "Texas", count: 5 },
+  { region: "Northeast", count: 12 },
+  { region: "Midwest", count: 6 },
+  { region: "Southeast", count: 9 },
+];
+
+interface Signal {
+  id: string;
+  claim: string;
+  sku?: string;
+  geo?: string;
+  field?: string;
+  confidence: number;
+  validated: boolean;
+  timestamp: number;
+  callId: string;
+  phoneNumber: string;
+  evidenceUrl?: string;
+  hypothesis?: string;
+  campaign?: string;
+}
 
 export default function InsightsPage() {
   const { data: campaigns, isLoading: isLoadingCampaigns } =
@@ -36,9 +113,9 @@ export default function InsightsPage() {
 
   const { data: hypotheses, isLoading: isLoadingHypotheses } =
     trpc.insight.listHypotheses.useQuery(
-    { campaignId: selectedCampaignId! },
-    { enabled: !!selectedCampaignId }
-  );
+      { campaignId: selectedCampaignId! },
+      { enabled: !!selectedCampaignId }
+    );
 
   // Get transcript for selected signal
   const { data: callDetails, isLoading: isLoadingTranscript } =
@@ -63,17 +140,17 @@ export default function InsightsPage() {
       callId: claim.call.id,
       phoneNumber: claim.call.phoneNumber,
       evidenceUrl: claim.evidenceUrl,
+      hypothesis: (claim as any).hypothesis?.question || "N/A",
+      campaign: selectedCampaignId || "N/A",
     }));
-  }, [validatedClaims]);
+  }, [validatedClaims, selectedCampaignId]);
 
   // Calculate KPIs with coverage metrics
   const kpis = useMemo(() => {
     if (!validatedClaims || !hypotheses) {
       return {
-        totalSignals: 0,
+        totalInterviews: 0,
         validatedSignals: 0,
-        avgConfidence: 0,
-        hypothesesValidated: 0,
         uniqueSkus: 0,
         uniqueGeos: 0,
         panelSize: 0,
@@ -81,14 +158,6 @@ export default function InsightsPage() {
     }
 
     const validatedCount = validatedClaims.filter((c) => c.validated).length;
-    const avgConfidence =
-      validatedClaims.reduce((sum, c) => sum + c.confidence, 0) /
-      (validatedClaims.length || 1);
-    const hypothesesValidatedCount = hypotheses.filter(
-      (h) => h.status === "VALIDATED"
-    ).length;
-
-    // Coverage metrics
     const uniqueSkus = new Set(
       validatedClaims.map((c) => c.skuId).filter(Boolean)
     ).size;
@@ -100,15 +169,22 @@ export default function InsightsPage() {
     ).size;
 
     return {
-      totalSignals: validatedClaims.length,
+      totalInterviews: panelSize,
       validatedSignals: validatedCount,
-      avgConfidence: avgConfidence * 100,
-      hypothesesValidated: hypothesesValidatedCount,
       uniqueSkus,
       uniqueGeos,
       panelSize,
     };
   }, [validatedClaims, hypotheses]);
+
+  // Panel health metrics (mock for now)
+  const panelHealth = {
+    scheduled: 45,
+    completed: 38,
+    consentRate: 84,
+    avgDuration: 8.5,
+    retryRate: 12,
+  };
 
   const handleSignalClick = (signal: Signal) => {
     setSelectedSignal(signal);
@@ -160,188 +236,311 @@ export default function InsightsPage() {
           </CardContent>
         </Card>
       ) : (
-      <Card>
-        <CardHeader>
-          <CardTitle>Select Campaign</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Select Campaign</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
               {campaigns.map((campaign) => (
-              <Button
-                key={campaign.id}
-                variant={
-                  selectedCampaignId === campaign.id ? "default" : "outline"
-                }
-                className={
-                  selectedCampaignId === campaign.id
-                    ? "bg-brand-600 hover:bg-brand-600/90 text-white"
-                    : ""
-                }
-                onClick={() => setSelectedCampaignId(campaign.id)}
-              >
-                {campaign.name}
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+                <Button
+                  key={campaign.id}
+                  variant={
+                    selectedCampaignId === campaign.id ? "default" : "outline"
+                  }
+                  className={
+                    selectedCampaignId === campaign.id
+                      ? "bg-brand-600 hover:bg-brand-600/90 text-white"
+                      : ""
+                  }
+                  onClick={() => setSelectedCampaignId(campaign.id)}
+                >
+                  {campaign.name}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {selectedCampaignId && (
         <>
-          {/* Panel Health & Coverage */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <KPITile
-              title="Panel Health"
-              value={kpis.panelSize}
-              subtitle="active contacts this week"
-              icon={Users}
-              isLoading={isLoading}
-              className="bg-muted"
-            />
-            <KPITile
-              title="Coverage: SKUs"
-              value={kpis.uniqueSkus}
-              subtitle="products tracked"
-              icon={Package}
-              isLoading={isLoading}
-              className="bg-muted"
-            />
-            <KPITile
-              title="Coverage: Regions"
-              value={kpis.uniqueGeos}
-              subtitle="geographies covered"
-              icon={MapPin}
-              isLoading={isLoading}
-              className="bg-muted"
-            />
-            <KPITile
-              title="Consistency Score"
-              value={`${kpis.avgConfidence.toFixed(0)}%`}
-              subtitle="avg confidence"
-              icon={TrendingUp}
-              isLoading={isLoading}
-              className="bg-muted"
-            />
-          </div>
-
-          {/* This Week's Signals Summary */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <KPITile
-              title="This Week's Signals"
-              value={kpis.totalSignals}
-              subtitle="extracted from interviews"
-              icon={Activity}
-              isLoading={isLoading}
-            />
-            <KPITile
-              title="Validated Signals"
-              value={kpis.validatedSignals}
-              subtitle="triangulated across sources"
-              icon={CheckCircle2}
-              isLoading={isLoading}
-            />
-            <KPITile
-              title="Trend Movements"
-              value={kpis.hypothesesValidated}
-              subtitle="hypotheses confirmed"
-              icon={AlertCircle}
-              isLoading={isLoading}
-            />
-          </div>
-
-          {/* Signals Table */}
-          <Card className="bg-muted">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-brand-950">Evidence Drawer</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Click any signal to view timestamped audio evidence and transcript
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      window.location.href = `/api/export/claims?campaignId=${selectedCampaignId}&format=csv&validatedOnly=false`;
-                    }}
-                  >
-                    Export CSV
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      window.location.href = `/api/export/claims?campaignId=${selectedCampaignId}&format=json&validatedOnly=false`;
-                    }}
-                  >
-                    Export JSON
-                  </Button>
-                </div>
+          {/* Main Content + Right Rail */}
+          <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+            {/* Main Content */}
+            <div className="space-y-6">
+              {/* KPI Tiles */}
+              <div className="grid gap-4 md:grid-cols-3">
+                <KPITile
+                  title="This Week's Interviews"
+                  value={kpis.totalInterviews}
+                  subtitle="completed"
+                  icon={Phone}
+                  isLoading={isLoading}
+                />
+                <KPITile
+                  title="Validated Signals"
+                  value={kpis.validatedSignals}
+                  subtitle="triangulated"
+                  icon={CheckCircle2}
+                  isLoading={isLoading}
+                />
+                <KPITile
+                  title="Coverage"
+                  value={`${kpis.uniqueSkus}/${kpis.uniqueGeos}`}
+                  subtitle="SKUs / Regions"
+                  icon={MapPin}
+                  isLoading={isLoading}
+                />
               </div>
-            </CardHeader>
-            <CardContent>
-              <SignalsTable
-                signals={signals}
-                onSignalClick={handleSignalClick}
-                isLoading={isLoading}
-              />
-            </CardContent>
-          </Card>
 
-          {/* Hypotheses Summary */}
-          {hypotheses && hypotheses.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Hypotheses Analysis</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {hypotheses.map((hypothesis) => (
-                    <a
-                      key={hypothesis.id}
-                      href={`/dashboard/insights/hypothesis/${hypothesis.id}`}
-                      className="block"
-                    >
-                      <div className="p-4 border rounded-lg hover:shadow-md transition-shadow cursor-pointer bg-bg">
-                        <div className="flex items-start justify-between mb-2">
-                          <h3 className="font-medium text-ink">
-                            {hypothesis.question}
-                          </h3>
-                          <span
-                            className={`px-2 py-1 text-xs rounded-full font-medium ${
-                              hypothesis.status === "VALIDATED"
-                                ? "bg-green-100 text-green-700"
-                                : hypothesis.status === "INVALIDATED"
-                                ? "bg-red-100 text-red-700"
-                                : hypothesis.status === "INCONCLUSIVE"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-gray-100 text-gray-700"
-                            }`}
-                          >
-                            {hypothesis.status}
-                          </span>
-                        </div>
-                        {hypothesis.conclusion && (
-                          <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                            {hypothesis.conclusion}
-                          </p>
-                        )}
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>{hypothesis._count.claims} claims</span>
-                          <span className="text-brand hover:underline">
-                            View details →
-                          </span>
-                        </div>
-                      </div>
-                    </a>
-                  ))}
-                </div>
-            </CardContent>
-          </Card>
-          )}
+              {/* Charts Row */}
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* Weekly Velocity Chart */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Weekly Velocity Index</CardTitle>
+                    <CardDescription>Signal extraction rate over time</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[250px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={mockWeeklyVelocity}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                          <XAxis
+                            dataKey="week"
+                            tick={{ fontSize: 12 }}
+                            stroke="#888"
+                          />
+                          <YAxis tick={{ fontSize: 12 }} stroke="#888" />
+                          <Tooltip />
+                          <Line
+                            type="monotone"
+                            dataKey="signals"
+                            stroke="#1E2E6E"
+                            strokeWidth={2}
+                            dot={{ fill: "#1E2E6E", r: 4 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                    {USE_MOCKS && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        * Sample data (NEXT_PUBLIC_USE_MOCKS=true)
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Stockouts by Region Chart */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Stockouts by Region</CardTitle>
+                    <CardDescription>Regional inventory signals</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[250px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={mockStockoutsByRegion}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                          <XAxis
+                            dataKey="region"
+                            tick={{ fontSize: 11 }}
+                            stroke="#888"
+                            angle={-15}
+                            textAnchor="end"
+                            height={60}
+                          />
+                          <YAxis tick={{ fontSize: 12 }} stroke="#888" />
+                          <Tooltip />
+                          <Bar dataKey="count" fill="#1E2E6E" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    {USE_MOCKS && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        * Sample data (NEXT_PUBLIC_USE_MOCKS=true)
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* This Week's Signals Table */}
+              <Card className="bg-muted">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-brand-950">This Week&apos;s Signals</CardTitle>
+                      <CardDescription className="mt-1">
+                        Click any signal to view timestamped audio evidence
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          window.location.href = `/api/export/claims?campaignId=${selectedCampaignId}&format=csv&validatedOnly=false`;
+                        }}
+                      >
+                        Export CSV
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <div className="space-y-2">
+                      {[1, 2, 3].map((i) => (
+                        <Skeleton key={i} className="h-16 w-full" />
+                      ))}
+                    </div>
+                  ) : signals.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Activity className="h-12 w-12 text-muted-foreground opacity-50 mx-auto mb-4" />
+                      <p className="text-sm text-muted-foreground">
+                        No signals yet. Run interviews to collect data.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b text-left text-sm font-medium text-muted-foreground">
+                            <th className="pb-3 pr-4">Signal</th>
+                            <th className="pb-3 pr-4">Hypothesis</th>
+                            <th className="pb-3 pr-4">Evidence</th>
+                            <th className="pb-3 pr-4">Confidence</th>
+                            <th className="pb-3">Campaign</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {signals.slice(0, 10).map((signal) => (
+                            <tr
+                              key={signal.id}
+                              className="border-b hover:bg-background/50 cursor-pointer transition-colors"
+                              onClick={() => handleSignalClick(signal)}
+                            >
+                              <td className="py-3 pr-4 text-sm">
+                                <div className="max-w-md">
+                                  <p className="font-medium text-ink line-clamp-2">
+                                    {signal.claim}
+                                  </p>
+                                  {signal.sku && (
+                                    <Badge variant="outline" className="mt-1 text-xs">
+                                      {signal.sku}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-3 pr-4 text-sm text-muted-foreground">
+                                {signal.hypothesis}
+                              </td>
+                              <td className="py-3 pr-4">
+                                <button className="text-xs text-brand-600 hover:underline flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {Math.floor(signal.timestamp / 60)}:
+                                  {String(Math.floor(signal.timestamp % 60)).padStart(2, "0")}
+                                </button>
+                              </td>
+                              <td className="py-3 pr-4">
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                    signal.confidence >= 0.8
+                                      ? "bg-green-50 text-green-700 border-green-200"
+                                      : signal.confidence >= 0.6
+                                      ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                      : "bg-red-50 text-red-700 border-red-200"
+                                  }
+                                >
+                                  {Math.round(signal.confidence * 100)}%
+                                </Badge>
+                              </td>
+                              <td className="py-3 text-sm text-muted-foreground">
+                                {campaigns?.find((c) => c.id === signal.campaign)?.name || "N/A"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Rail - Continuous Information */}
+            <div className="space-y-6">
+              {/* Panel Health */}
+              <Card className="bg-muted">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-brand-600" />
+                    <CardTitle className="text-lg">Panel Health</CardTitle>
+                  </div>
+                  <CardDescription>This week&apos;s interview metrics</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Interviews Scheduled</p>
+                    <p className="text-2xl font-bold text-ink">{panelHealth.scheduled}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Completed</p>
+                    <p className="text-2xl font-bold text-ink">{panelHealth.completed}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Consent Rate</p>
+                    <p className="text-2xl font-bold text-ink">{panelHealth.consentRate}%</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Avg Duration</p>
+                    <p className="text-2xl font-bold text-ink">{panelHealth.avgDuration} min</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Retry Rate</p>
+                    <p className="text-2xl font-bold text-ink">{panelHealth.retryRate}%</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Coverage */}
+              <Card className="bg-muted">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-brand-600" />
+                    <CardTitle className="text-lg">Coverage</CardTitle>
+                  </div>
+                  <CardDescription>Latest week targets</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">SKUs</p>
+                    </div>
+                    <p className="text-xl font-bold text-ink">{kpis.uniqueSkus}</p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">Stores</p>
+                    </div>
+                    <p className="text-xl font-bold text-ink">{kpis.panelSize}</p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">Regions</p>
+                    </div>
+                    <p className="text-xl font-bold text-ink">{kpis.uniqueGeos}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </>
       )}
 

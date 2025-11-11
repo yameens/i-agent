@@ -39,7 +39,7 @@ describe("ClaimParser", () => {
 
       const result = ClaimParser.parseModelOutput(invalidOutput);
       expect(result.success).toBe(false);
-      if (!result.success) {
+      if (result.success === false) {
         expect(result.error).toContain("Failed to parse JSON");
       }
     });
@@ -57,7 +57,7 @@ describe("ClaimParser", () => {
 
       const result = ClaimParser.parseModelOutput(invalidOutput);
       expect(result.success).toBe(false);
-      if (!result.success) {
+      if (result.success === false) {
         expect(result.error).toContain("Schema validation failed");
       }
     });
@@ -115,7 +115,7 @@ describe("ClaimParser", () => {
 
       const result = ClaimParser.parseModelOutput(allInvalidOutput);
       expect(result.success).toBe(false);
-      if (!result.success) {
+      if (result.success === false) {
         expect(result.error).toContain("All claims failed validation");
       }
     });

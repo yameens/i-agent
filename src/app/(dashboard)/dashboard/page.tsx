@@ -125,7 +125,7 @@ export default function DashboardPage() {
             <div className="flex flex-col items-center gap-4 py-8">
               <TrendingUp className="h-12 w-12 text-muted-foreground opacity-50" />
               <p className="text-sm text-muted-foreground text-center max-w-md">
-                Get started by creating a campaign. Configure your panel, set up interview scripts, and start gathering continuous intelligence.
+                Create your first campaign to start automated retail interviews. Configure your panel, set weekly cadence, and collect continuous intelligence.
               </p>
             <Button asChild className="bg-brand-600 hover:bg-brand-600/90 text-white">
                 <Link href="/dashboard/campaigns/new">

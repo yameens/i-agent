@@ -91,7 +91,7 @@ export const validateClaim = inngest.createFunction(
         const systemPrompt = `You are an expert analyst evaluating the consistency and validity of claims from multiple independent sources.
 
 Your task:
-1. Analyze claims from at least 3 different channel-check calls
+1. Analyze claims from at least 3 different retail interview calls
 2. Determine if the claims are consistent and mutually supportive (triangulation)
 3. Identify any contradictions or inconsistencies
 4. Provide an overall validation status: VALIDATED, INVALIDATED, or INCONCLUSIVE

@@ -56,7 +56,7 @@ export async function addSalesforceNote(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        Title: "Channel Check Insights",
+        Title: "Retail Interview Insights",
         Content: Buffer.from(noteBody).toString("base64"),
       }),
     }

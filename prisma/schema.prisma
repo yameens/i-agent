@@ -78,6 +78,11 @@ model Campaign {
   hypotheses     Hypothesis[]
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+  
+  // Additive fields for retail panel campaigns (optional, backward-compatible)
+  panel          Json? // { companies: string[], regions: string[], contacts: ContactLite[], size: number }
+  cadence        String? // e.g., "WEEKLY", "BIWEEKLY"
+  window         Json? // { days: ["Mon","Tue"], start: "09:00", end: "17:00", tz: "America/Los_Angeles" }
 
   @@index([organizationId])
   @@index([status])

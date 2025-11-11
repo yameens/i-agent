@@ -242,7 +242,7 @@ export function buildExtractionPrompt(options: {
   ragContext: string;
   category: string;
 }): { system: string; user: string } {
-  const system = `You are an expert analyst extracting structured, verifiable claims from channel-check call transcripts.
+  const system = `You are an expert analyst extracting structured, verifiable claims from automated retail interview transcripts.
 
 CRITICAL: You MUST return valid JSON matching this exact schema:
 

@@ -17,9 +17,9 @@ export default function CallsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-ink">Calls</h1>
+        <h1 className="text-3xl font-bold text-brand-950">Calls</h1>
         <p className="text-muted-foreground mt-1">
-          View all channel-check calls across campaigns
+          View all automated retail interviews across campaigns
         </p>
       </div>
 
